@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    // tsup's .d.ts bundler still injects a `baseUrl` when `paths` is present;
+    // silence TS 6's deprecation error until TS 7 (real tsc passes without it).
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/lib/utils": ["./src/lib/cn.ts"],
+      "@/registry/new-york/blocks/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "tsup.config.ts"],
+  "exclude": ["node_modules", "dist", "**/__tests__/**"]
+}

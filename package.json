@@ -1,0 +1,91 @@
+{
+  "name": "prompt-area",
+  "version": "0.3.2",
+  "description": "An opinionated, dependency-light React rich-text prompt input with trigger-based chips (@mentions, /commands, #tags), inline markdown, undo/redo, file & image attachments, and a complete chat-input layout. Ships as an npm package or a shadcn registry.",
+  "keywords": [
+    "react",
+    "prompt",
+    "chat-input",
+    "textarea",
+    "contenteditable",
+    "mentions",
+    "slash-commands",
+    "rich-text",
+    "ai",
+    "shadcn"
+  ],
+  "license": "MIT",
+  "homepage": "https://prompt-area.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/just-marketing/prompt-area.git",
+    "directory": "packages/prompt-area"
+  },
+  "bugs": {
+    "url": "https://github.com/just-marketing/prompt-area/issues"
+  },
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./prompt-area": {
+      "types": "./dist/prompt-area/index.d.ts",
+      "import": "./dist/prompt-area/index.js"
+    },
+    "./action-bar": {
+      "types": "./dist/action-bar/index.d.ts",
+      "import": "./dist/action-bar/index.js"
+    },
+    "./status-bar": {
+      "types": "./dist/status-bar/index.d.ts",
+      "import": "./dist/status-bar/index.js"
+    },
+    "./compact-prompt-area": {
+      "types": "./dist/compact-prompt-area/index.d.ts",
+      "import": "./dist/compact-prompt-area/index.js"
+    },
+    "./chat-prompt-layout": {
+      "types": "./dist/chat-prompt-layout/index.d.ts",
+      "import": "./dist/chat-prompt-layout/index.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers/index.d.ts",
+      "import": "./dist/helpers/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup && node ./scripts/preserve-directives.mjs",
+    "dev": "tsup --watch --onSuccess \"node ./scripts/preserve-directives.mjs\"",
+    "clean": "rm -rf dist .turbo",
+    "type-check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "clsx": ">=2",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "tailwind-merge": ">=2"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "clsx": "2.1.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwind-merge": "3.6.0",
+    "tsup": "8.3.6",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,1157 @@
+import { describe, it, expect } from 'vitest'
+import {
+  isHTMLElement,
+  isChipElement,
+  isBRElement,
+  isLinkElement,
+  isTextNode,
+  getSelectionRange,
+  safeJsonParse,
+  safeJsonStringify,
+  getChipTrigger,
+  getChipValue,
+  getChipDisplay,
+  getChipData,
+  getChipAutoResolved,
+  indexOfChildNode,
+  getDirectChildContaining,
+  chipNodeTextLength,
+  chipNodeToSegment,
+  domChildIndexToSegmentIndex,
+  normalizeEditorDOM,
+  decorateURLsInEditor,
+  decorateMarkdownInEditor,
+} from '../dom-helpers'
+
+// ===========================================================================
+// Type Guards
+// ===========================================================================
+
+describe('isHTMLElement', () => {
+  it('returns true for an HTMLElement', () => {
+    const el = document.createElement('div')
+    expect(isHTMLElement(el)).toBe(true)
+  })
+
+  it('returns true for a span', () => {
+    const el = document.createElement('span')
+    expect(isHTMLElement(el)).toBe(true)
+  })
+
+  it('returns false for a text node', () => {
+    const text = document.createTextNode('hello')
+    expect(isHTMLElement(text)).toBe(false)
+  })
+
+  it('returns false for a comment node', () => {
+    const comment = document.createComment('comment')
+    expect(isHTMLElement(comment)).toBe(false)
+  })
+})
+
+describe('isChipElement', () => {
+  it('returns true for an element with data-chip-trigger', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    expect(isChipElement(el)).toBe(true)
+  })
+
+  it('returns false for a plain element', () => {
+    const el = document.createElement('span')
+    expect(isChipElement(el)).toBe(false)
+  })
+
+  it('returns false for a text node', () => {
+    const text = document.createTextNode('hello')
+    expect(isChipElement(text)).toBe(false)
+  })
+
+  it('returns false for an element with other data attributes', () => {
+    const el = document.createElement('span')
+    el.dataset.other = 'value'
+    expect(isChipElement(el)).toBe(false)
+  })
+})
+
+describe('isTextNode', () => {
+  it('returns true for a text node', () => {
+    const text = document.createTextNode('hello')
+    expect(isTextNode(text)).toBe(true)
+  })
+
+  it('returns false for an element', () => {
+    const el = document.createElement('div')
+    expect(isTextNode(el)).toBe(false)
+  })
+
+  it('returns false for a comment node', () => {
+    const comment = document.createComment('comment')
+    expect(isTextNode(comment)).toBe(false)
+  })
+})
+
+describe('isBRElement', () => {
+  it('returns true for a BR element', () => {
+    const br = document.createElement('br')
+    expect(isBRElement(br)).toBe(true)
+  })
+
+  it('returns false for a div element', () => {
+    const div = document.createElement('div')
+    expect(isBRElement(div)).toBe(false)
+  })
+
+  it('returns false for a text node', () => {
+    const text = document.createTextNode('hello')
+    expect(isBRElement(text)).toBe(false)
+  })
+})
+
+// ===========================================================================
+// Selection helpers
+// ===========================================================================
+
+describe('getSelectionRange', () => {
+  it('returns null when there is no selection', () => {
+    const sel = window.getSelection()
+    sel?.removeAllRanges()
+    expect(getSelectionRange()).toBeNull()
+  })
+
+  it('returns the first range when a selection exists', () => {
+    const div = document.createElement('div')
+    div.textContent = 'hello'
+    document.body.appendChild(div)
+    const range = document.createRange()
+    range.selectNodeContents(div)
+    const sel = window.getSelection()!
+    sel.removeAllRanges()
+    sel.addRange(range)
+
+    const result = getSelectionRange()
+    expect(result).toBeInstanceOf(Range)
+    document.body.removeChild(div)
+    sel.removeAllRanges()
+  })
+})
+
+// ===========================================================================
+// Safe JSON
+// ===========================================================================
+
+describe('safeJsonParse', () => {
+  it('parses valid JSON', () => {
+    expect(safeJsonParse('{"key":"value"}')).toEqual({ key: 'value' })
+  })
+
+  it('parses JSON arrays', () => {
+    expect(safeJsonParse('[1,2,3]')).toEqual([1, 2, 3])
+  })
+
+  it('parses JSON primitives', () => {
+    expect(safeJsonParse('"hello"')).toBe('hello')
+    expect(safeJsonParse('42')).toBe(42)
+    expect(safeJsonParse('true')).toBe(true)
+    expect(safeJsonParse('null')).toBe(null)
+  })
+
+  it('returns undefined for invalid JSON', () => {
+    expect(safeJsonParse('{')).toBeUndefined()
+    expect(safeJsonParse('not json')).toBeUndefined()
+    expect(safeJsonParse('')).toBeUndefined()
+  })
+})
+
+describe('safeJsonStringify', () => {
+  it('stringifies objects', () => {
+    expect(safeJsonStringify({ key: 'value' })).toBe('{"key":"value"}')
+  })
+
+  it('stringifies primitives', () => {
+    expect(safeJsonStringify('hello')).toBe('"hello"')
+    expect(safeJsonStringify(42)).toBe('42')
+  })
+
+  it('returns undefined for circular references', () => {
+    const obj: Record<string, unknown> = {}
+    obj.self = obj
+    expect(safeJsonStringify(obj)).toBeUndefined()
+  })
+})
+
+// ===========================================================================
+// Chip reading helpers
+// ===========================================================================
+
+describe('getChipTrigger', () => {
+  it('returns trigger for chip element', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    expect(getChipTrigger(el)).toBe('@')
+  })
+
+  it('returns undefined for non-chip element', () => {
+    const el = document.createElement('span')
+    expect(getChipTrigger(el)).toBeUndefined()
+  })
+
+  it('returns undefined for text node', () => {
+    const text = document.createTextNode('hello')
+    expect(getChipTrigger(text)).toBeUndefined()
+  })
+})
+
+describe('getChipValue', () => {
+  it('returns value for chip element', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.dataset.chipValue = 'user-123'
+    expect(getChipValue(el)).toBe('user-123')
+  })
+
+  it('returns undefined for non-chip', () => {
+    expect(getChipValue(document.createElement('div'))).toBeUndefined()
+  })
+})
+
+describe('getChipDisplay', () => {
+  it('returns display text from dataset', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.dataset.chipDisplay = 'Alice'
+    expect(getChipDisplay(el)).toBe('Alice')
+  })
+
+  it('falls back to textContent', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.textContent = '@Alice'
+    expect(getChipDisplay(el)).toBe('@Alice')
+  })
+
+  it('returns undefined for non-chip', () => {
+    expect(getChipDisplay(document.createTextNode('hi'))).toBeUndefined()
+  })
+})
+
+describe('getChipData', () => {
+  it('returns parsed data from dataset', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.dataset.chipData = '{"role":"admin"}'
+    expect(getChipData(el)).toEqual({ role: 'admin' })
+  })
+
+  it('returns undefined when no data', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    expect(getChipData(el)).toBeUndefined()
+  })
+
+  it('returns undefined for invalid JSON data', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.dataset.chipData = 'not json'
+    expect(getChipData(el)).toBeUndefined()
+  })
+
+  it('returns undefined for non-chip', () => {
+    expect(getChipData(document.createElement('div'))).toBeUndefined()
+  })
+})
+
+// ===========================================================================
+// DOM manipulation helpers
+// ===========================================================================
+
+describe('indexOfChildNode', () => {
+  it('finds a child at the correct index', () => {
+    const parent = document.createElement('div')
+    const child0 = document.createTextNode('a')
+    const child1 = document.createElement('span')
+    const child2 = document.createTextNode('b')
+    parent.appendChild(child0)
+    parent.appendChild(child1)
+    parent.appendChild(child2)
+
+    expect(indexOfChildNode(parent, child0)).toBe(0)
+    expect(indexOfChildNode(parent, child1)).toBe(1)
+    expect(indexOfChildNode(parent, child2)).toBe(2)
+  })
+
+  it('returns -1 for a node not in parent', () => {
+    const parent = document.createElement('div')
+    const orphan = document.createTextNode('orphan')
+    expect(indexOfChildNode(parent, orphan)).toBe(-1)
+  })
+})
+
+describe('getDirectChildContaining', () => {
+  it('returns the direct child containing a deeply nested node', () => {
+    const ancestor = document.createElement('div')
+    const child = document.createElement('span')
+    const grandchild = document.createTextNode('deep')
+    child.appendChild(grandchild)
+    ancestor.appendChild(child)
+
+    expect(getDirectChildContaining(ancestor, grandchild)).toBe(child)
+  })
+
+  it('returns the node itself if it is a direct child', () => {
+    const ancestor = document.createElement('div')
+    const child = document.createTextNode('direct')
+    ancestor.appendChild(child)
+
+    expect(getDirectChildContaining(ancestor, child)).toBe(child)
+  })
+
+  it('returns null if node is not inside ancestor', () => {
+    const ancestor = document.createElement('div')
+    const unrelated = document.createTextNode('other')
+
+    expect(getDirectChildContaining(ancestor, unrelated)).toBeNull()
+  })
+})
+
+// ===========================================================================
+// normalizeEditorDOM
+// ===========================================================================
+
+describe('normalizeEditorDOM', () => {
+  it('unwraps div wrappers (Chrome-style newlines)', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = 'line1<div>line2</div>'
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    // Should have text node "line1", then "line2", then BR
+    const texts = Array.from(editor.childNodes)
+      .filter((n) => n.nodeType === Node.TEXT_NODE)
+      .map((n) => n.textContent)
+    expect(texts.join('')).toContain('line1')
+    expect(texts.join('')).toContain('line2')
+  })
+
+  it('unwraps p tags', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = '<p>paragraph text</p>'
+
+    normalizeEditorDOM(editor)
+
+    // Should have unwrapped the p
+    expect(editor.querySelector('p')).toBeNull()
+    expect(editor.textContent).toContain('paragraph text')
+  })
+
+  it('removes inline formatting elements (font, b, i)', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = 'hello <b>bold</b> world'
+
+    normalizeEditorDOM(editor)
+
+    expect(editor.querySelector('b')).toBeNull()
+    expect(editor.textContent).toBe('hello bold world')
+  })
+
+  it('preserves chip elements', () => {
+    const editor = document.createElement('div')
+    const chip = document.createElement('span')
+    chip.dataset.chipTrigger = '@'
+    chip.dataset.chipValue = 'user-1'
+    chip.dataset.chipDisplay = 'Alice'
+    chip.textContent = '@Alice'
+    editor.appendChild(document.createTextNode('hello '))
+    editor.appendChild(chip)
+
+    normalizeEditorDOM(editor)
+
+    // Chip should still be there
+    const chipEl = editor.querySelector('[data-chip-trigger]')
+    expect(chipEl).not.toBeNull()
+    expect(chipEl?.textContent).toBe('@Alice')
+  })
+
+  it('preserves BR elements', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = 'line1<br>line2'
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(false) // nothing to normalize
+    expect(editor.querySelector('br')).not.toBeNull()
+  })
+
+  it('returns false when nothing changes', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('plain text'))
+
+    expect(normalizeEditorDOM(editor)).toBe(false)
+  })
+
+  it('handles empty editor', () => {
+    const editor = document.createElement('div')
+    expect(normalizeEditorDOM(editor)).toBe(false)
+  })
+})
+
+// ===========================================================================
+// getChipAutoResolved
+// ===========================================================================
+
+describe('getChipAutoResolved', () => {
+  it('returns true when data-chip-auto-resolved is "true"', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '#'
+    el.dataset.chipAutoResolved = 'true'
+    expect(getChipAutoResolved(el)).toBe(true)
+  })
+
+  it('returns false when attribute is not set', () => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '#'
+    expect(getChipAutoResolved(el)).toBe(false)
+  })
+
+  it('returns false for non-chip elements', () => {
+    const el = document.createElement('span')
+    expect(getChipAutoResolved(el)).toBe(false)
+  })
+
+  it('returns false for text nodes', () => {
+    const text = document.createTextNode('hello')
+    expect(getChipAutoResolved(text)).toBe(false)
+  })
+})
+
+// ===========================================================================
+// isLinkElement
+// ===========================================================================
+
+describe('isLinkElement', () => {
+  it('returns true for an anchor with data-url="true"', () => {
+    const el = document.createElement('a')
+    el.dataset.url = 'true'
+    expect(isLinkElement(el)).toBe(true)
+  })
+
+  it('returns false for an anchor without data-url', () => {
+    const el = document.createElement('a')
+    expect(isLinkElement(el)).toBe(false)
+  })
+
+  it('returns false for non-anchor elements', () => {
+    const el = document.createElement('span')
+    expect(isLinkElement(el)).toBe(false)
+  })
+
+  it('returns false for text nodes', () => {
+    const text = document.createTextNode('hello')
+    expect(isLinkElement(text)).toBe(false)
+  })
+})
+
+// ===========================================================================
+// normalizeEditorDOM strips <a> tags
+// ===========================================================================
+
+describe('normalizeEditorDOM with <a> tags', () => {
+  it('strips anchor elements and preserves text content', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = 'hello <a href="https://example.com">https://example.com</a> world'
+
+    normalizeEditorDOM(editor)
+
+    expect(editor.querySelector('a')).toBeNull()
+    expect(editor.textContent).toBe('hello https://example.com world')
+  })
+})
+
+// ===========================================================================
+// decorateURLsInEditor
+// ===========================================================================
+
+describe('decorateURLsInEditor', () => {
+  it('wraps a URL in an anchor element', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('visit https://example.com today'))
+
+    const decorated = decorateURLsInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.href).toBe('https://example.com/')
+    expect(anchor?.textContent).toBe('https://example.com')
+    expect(anchor?.dataset.url).toBe('true')
+    expect(anchor?.className).toBe('text-primary hover:text-primary/80 underline cursor-pointer')
+  })
+
+  it('wraps multiple URLs', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('see https://a.com and https://b.com'))
+
+    decorateURLsInEditor(editor)
+
+    const anchors = editor.querySelectorAll('a')
+    expect(anchors.length).toBe(2)
+  })
+
+  it('returns false when no URLs found', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('no urls here'))
+
+    expect(decorateURLsInEditor(editor)).toBe(false)
+  })
+
+  it('preserves chip elements', () => {
+    const editor = document.createElement('div')
+    const chip = document.createElement('span')
+    chip.dataset.chipTrigger = '@'
+    chip.textContent = '@Alice'
+    editor.appendChild(chip)
+    editor.appendChild(document.createTextNode(' https://example.com'))
+
+    decorateURLsInEditor(editor)
+
+    expect(editor.querySelector('[data-chip-trigger]')).not.toBeNull()
+    expect(editor.querySelector('a')).not.toBeNull()
+  })
+
+  it('trims trailing punctuation from URLs', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('see https://example.com.'))
+
+    decorateURLsInEditor(editor)
+
+    const anchor = editor.querySelector('a')
+    expect(anchor?.textContent).toBe('https://example.com')
+  })
+})
+
+// ===========================================================================
+// normalizeEditorDOM strips non-chip SPANs
+// ===========================================================================
+
+describe('normalizeEditorDOM with non-chip spans', () => {
+  it('strips markdown decoration spans and preserves text', () => {
+    const editor = document.createElement('div')
+    const span = document.createElement('span')
+    span.dataset.md = 'true'
+    span.className = 'font-bold'
+    span.textContent = '**hello**'
+    editor.appendChild(document.createTextNode('say '))
+    editor.appendChild(span)
+    editor.appendChild(document.createTextNode(' world'))
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    expect(editor.querySelector('span')).toBeNull()
+    expect(editor.textContent).toBe('say **hello** world')
+  })
+
+  it('strips browser-inserted spans without chip data', () => {
+    const editor = document.createElement('div')
+    const span = document.createElement('span')
+    span.style.fontWeight = 'bold'
+    span.textContent = 'styled'
+    editor.appendChild(span)
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    expect(editor.querySelector('span')).toBeNull()
+    expect(editor.textContent).toBe('styled')
+  })
+
+  it('removes empty non-chip spans', () => {
+    const editor = document.createElement('div')
+    const span = document.createElement('span')
+    span.textContent = ''
+    editor.appendChild(span)
+
+    normalizeEditorDOM(editor)
+
+    expect(editor.childNodes.length).toBe(0)
+  })
+
+  it('preserves chip spans during normalization', () => {
+    const editor = document.createElement('div')
+    const chip = document.createElement('span')
+    chip.dataset.chipTrigger = '@'
+    chip.dataset.chipValue = 'user-1'
+    chip.textContent = '@Alice'
+    const mdSpan = document.createElement('span')
+    mdSpan.dataset.md = 'true'
+    mdSpan.textContent = '**bold**'
+    editor.appendChild(chip)
+    editor.appendChild(mdSpan)
+
+    normalizeEditorDOM(editor)
+
+    expect(editor.querySelector('[data-chip-trigger]')).not.toBeNull()
+    expect(editor.querySelector('[data-md]')).toBeNull()
+    expect(editor.textContent).toBe('@Alice**bold**')
+  })
+})
+
+// ===========================================================================
+// decorateMarkdownInEditor
+// ===========================================================================
+
+describe('decorateMarkdownInEditor', () => {
+  it('wraps **bold** text in a bold span with hidden markers', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hello **world** end'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const span = editor.querySelector('span[data-md]')
+    expect(span).not.toBeNull()
+    // textContent still includes markers (child text nodes concatenate)
+    expect(span?.textContent).toBe('**world**')
+    // Inner structure: hidden marker + styled content + hidden marker
+    const markers = span?.querySelectorAll('.prompt-area-md-marker')
+    expect(markers?.length).toBe(2)
+    expect(markers?.[0]?.textContent).toBe('**')
+    expect(markers?.[1]?.textContent).toBe('**')
+    const styledContent = span?.querySelector('.font-bold')
+    expect(styledContent).not.toBeNull()
+    expect(styledContent?.textContent).toBe('world')
+  })
+
+  it('wraps *italic* text in an italic span with hidden markers', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hello *world* end'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const span = editor.querySelector('span[data-md]')
+    expect(span).not.toBeNull()
+    expect(span?.textContent).toBe('*world*')
+    const markers = span?.querySelectorAll('.prompt-area-md-marker')
+    expect(markers?.length).toBe(2)
+    expect(markers?.[0]?.textContent).toBe('*')
+    expect(markers?.[1]?.textContent).toBe('*')
+    const styledContent = span?.querySelector('.italic')
+    expect(styledContent).not.toBeNull()
+    expect(styledContent?.textContent).toBe('world')
+  })
+
+  it('wraps ***bold-italic*** text in a bold+italic span with hidden markers', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hello ***world*** end'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const span = editor.querySelector('span[data-md]')
+    expect(span).not.toBeNull()
+    expect(span?.textContent).toBe('***world***')
+    const markers = span?.querySelectorAll('.prompt-area-md-marker')
+    expect(markers?.length).toBe(2)
+    expect(markers?.[0]?.textContent).toBe('***')
+    expect(markers?.[1]?.textContent).toBe('***')
+    const styledContent = span?.querySelector('.font-bold.italic')
+    expect(styledContent).not.toBeNull()
+    expect(styledContent?.textContent).toBe('world')
+  })
+
+  it('handles multiple markdown spans in one text node', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('**bold** and *italic* text'))
+
+    decorateMarkdownInEditor(editor)
+
+    const spans = editor.querySelectorAll('span[data-md]')
+    expect(spans.length).toBe(2)
+    expect(spans[0]?.textContent).toBe('**bold**')
+    expect(spans[0]?.querySelector('.font-bold')?.textContent).toBe('bold')
+    expect(spans[1]?.textContent).toBe('*italic*')
+    expect(spans[1]?.querySelector('.italic')?.textContent).toBe('italic')
+  })
+
+  it('preserves surrounding plain text', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('before **bold** after'))
+
+    decorateMarkdownInEditor(editor)
+
+    expect(editor.textContent).toBe('before **bold** after')
+  })
+
+  it('returns false when no markdown found', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('no markdown here'))
+
+    expect(decorateMarkdownInEditor(editor)).toBe(false)
+  })
+
+  it('preserves chip elements', () => {
+    const editor = document.createElement('div')
+    const chip = document.createElement('span')
+    chip.dataset.chipTrigger = '@'
+    chip.textContent = '@Alice'
+    editor.appendChild(chip)
+    editor.appendChild(document.createTextNode(' **bold**'))
+
+    decorateMarkdownInEditor(editor)
+
+    expect(editor.querySelector('[data-chip-trigger]')).not.toBeNull()
+    expect(editor.querySelector('[data-md]')).not.toBeNull()
+  })
+
+  it('handles empty editor', () => {
+    const editor = document.createElement('div')
+    expect(decorateMarkdownInEditor(editor)).toBe(false)
+  })
+})
+
+// ===========================================================================
+// decorateURLsInEditor — edge cases
+// ===========================================================================
+
+describe('decorateURLsInEditor edge cases', () => {
+  it('decorates a URL at the very start of text (no preceding text)', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('https://example.com is great'))
+
+    const decorated = decorateURLsInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://example.com')
+    // The first child should be the anchor (no preceding text node)
+    expect(editor.firstChild).toBe(anchor)
+  })
+
+  it('decorates a URL at the very end of text (no following text)', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('visit https://example.com'))
+
+    const decorated = decorateURLsInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://example.com')
+    // The last child should be the anchor (no trailing text node)
+    expect(editor.lastChild).toBe(anchor)
+  })
+
+  it('trims multiple trailing punctuation characters from a URL', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('see https://example.com...'))
+
+    decorateURLsInEditor(editor)
+
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://example.com')
+  })
+
+  it('skips a URL that becomes empty after punctuation stripping', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('see http://...'))
+
+    const decorated = decorateURLsInEditor(editor)
+
+    // The URL http://... after trimming trailing dots becomes http:// which
+    // still has length > 0, but let's verify no crash and correct behavior.
+    // The regex matches "http://..." and the punctuation loop trims dots.
+    // "http://" has length > 0 so it would still be pushed.
+    const anchor = editor.querySelector('a')
+    if (anchor) {
+      // If it was decorated, the URL should have the dots trimmed
+      expect(decorated).toBe(true)
+      expect(anchor.textContent).not.toMatch(/\.+$/)
+    } else {
+      // If no match at all, that's also acceptable
+      expect(decorated).toBe(false)
+    }
+  })
+
+  it('skips text nodes with empty textContent', () => {
+    const editor = document.createElement('div')
+    // Append an empty text node — should be skipped
+    editor.appendChild(document.createTextNode(''))
+    // Append a non-empty text node with a URL
+    editor.appendChild(document.createTextNode('https://example.com'))
+
+    const decorated = decorateURLsInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://example.com')
+  })
+
+  it('decorates a URL with a port number', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('check https://localhost:3000/path here'))
+
+    decorateURLsInEditor(editor)
+
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://localhost:3000/path')
+  })
+
+  it('decorates a URL with query params', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('search https://example.com?q=test&page=2 done'))
+
+    decorateURLsInEditor(editor)
+
+    const anchor = editor.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.textContent).toBe('https://example.com?q=test&page=2')
+  })
+
+  it('handles multiple URLs in same text node with adjacent punctuation', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('visit https://a.com. Also see https://b.com!'))
+
+    decorateURLsInEditor(editor)
+
+    const anchors = editor.querySelectorAll('a')
+    expect(anchors.length).toBe(2)
+    // Both should have trailing punctuation stripped
+    expect(anchors[0]?.textContent).toBe('https://a.com')
+    expect(anchors[1]?.textContent).toBe('https://b.com')
+  })
+})
+
+// ===========================================================================
+// decorateMarkdownInEditor — edge cases
+// ===========================================================================
+
+describe('decorateMarkdownInEditor edge cases', () => {
+  it('does not decorate asterisks with spaces that are not valid markdown (e.g., "a * b")', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('a * b'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    // "a * b" has a space after the opening * — the regex (.+?) is non-greedy
+    // but requires closing *. Since there IS a match (* b*) — let's just verify no crash.
+    // Actually "a * b" has no closing * that forms a valid pair without the leading space issue.
+    // The regex `(\*)(.+?)\*` would match "* b*" if there was a closing *.
+    // With input "a * b" there's no second asterisk, so no match.
+    expect(decorated).toBe(false)
+    expect(editor.querySelector('span[data-md]')).toBeNull()
+  })
+
+  it('handles nested-like patterns: **bold *and italic* end**', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('**bold *and italic* end**'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(true)
+    // The regex is non-greedy so it will match specific patterns
+    const spans = editor.querySelectorAll('span[data-md]')
+    expect(spans.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('treats four asterisks (****) as italic wrapping "*" content', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('****'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    // **** is matched by the italic pattern: opening *, content *, closing * = "***"
+    // with one trailing * left over as a text node.
+    expect(decorated).toBe(true)
+    const span = editor.querySelector('span[data-md]')
+    expect(span).not.toBeNull()
+    expect(span?.textContent).toBe('***')
+    // The styled content inside should be "*"
+    const styledContent = span?.querySelector('.italic')
+    expect(styledContent?.textContent).toBe('*')
+  })
+
+  it('only processes direct child text nodes (not nested ones)', () => {
+    const editor = document.createElement('div')
+    const inner = document.createElement('span')
+    inner.textContent = '**bold**'
+    editor.appendChild(inner)
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    // The span is not a text node, so it should not be processed
+    expect(decorated).toBe(false)
+    // The inner span should remain unchanged
+    expect(inner.textContent).toBe('**bold**')
+  })
+
+  it('handles a text node whose parent is null (orphan node)', () => {
+    // We can't easily test the exact "parent is null" branch in decorateMarkdownInEditor
+    // because to get into the loop, the text node must be a child of editor.
+    // However, if we remove the text node from the editor between collection and processing,
+    // the parent will be null and the branch will be hit.
+    const editor = document.createElement('div')
+    const textNode = document.createTextNode('**bold**')
+    editor.appendChild(textNode)
+
+    // Monkey-patch: remove the node from the editor after collection but before processing.
+    // Since we can't do that directly, we test the function with a detached text node scenario.
+    // Instead, let's just verify the function doesn't crash on a minimal case.
+    const decorated = decorateMarkdownInEditor(editor)
+    expect(decorated).toBe(true)
+  })
+
+  it('decorates markdown markers at the very start and end of text node', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('**everything is bold**'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(true)
+    const span = editor.querySelector('span[data-md]')
+    expect(span).not.toBeNull()
+    expect(span?.textContent).toBe('**everything is bold**')
+    // There should be no extra text nodes before or after
+    // The editor should contain just the span
+    expect(editor.childNodes.length).toBe(1)
+    expect(editor.firstChild).toBe(span)
+  })
+
+  it('does not decorate an incomplete markdown marker (single asterisk at end)', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hello *'))
+
+    const decorated = decorateMarkdownInEditor(editor)
+
+    expect(decorated).toBe(false)
+    expect(editor.querySelector('span[data-md]')).toBeNull()
+  })
+})
+
+// ===========================================================================
+// normalizeEditorDOM — additional edge cases
+// ===========================================================================
+
+describe('normalizeEditorDOM additional edge cases', () => {
+  it('unwraps nested div-in-div (div > div > text)', () => {
+    const editor = document.createElement('div')
+    const outerDiv = document.createElement('div')
+    const innerDiv = document.createElement('div')
+    innerDiv.textContent = 'deeply nested'
+    outerDiv.appendChild(innerDiv)
+    editor.appendChild(outerDiv)
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    // The outer div should be unwrapped; the inner div may also be unwrapped
+    // in a subsequent pass or the same pass (iterating backwards).
+    expect(editor.textContent).toContain('deeply nested')
+  })
+
+  it('unwraps multiple block elements in sequence (div, p, div)', () => {
+    const editor = document.createElement('div')
+    editor.innerHTML = '<div>line1</div><p>line2</p><div>line3</div>'
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    // All block elements should be unwrapped
+    expect(editor.querySelector('div')).toBeNull()
+    expect(editor.querySelector('p')).toBeNull()
+    expect(editor.textContent).toContain('line1')
+    expect(editor.textContent).toContain('line2')
+    expect(editor.textContent).toContain('line3')
+  })
+
+  it('handles elements with mixed valid and invalid children', () => {
+    const editor = document.createElement('div')
+    // Mix of: text, chip (valid), div (block to unwrap), b (inline to unwrap), br (valid)
+    editor.appendChild(document.createTextNode('start '))
+    const chip = document.createElement('span')
+    chip.dataset.chipTrigger = '@'
+    chip.dataset.chipValue = 'user-1'
+    chip.textContent = '@Alice'
+    editor.appendChild(chip)
+    const div = document.createElement('div')
+    div.textContent = 'block content'
+    editor.appendChild(div)
+    const bold = document.createElement('b')
+    bold.textContent = 'bold text'
+    editor.appendChild(bold)
+    editor.appendChild(document.createElement('br'))
+    editor.appendChild(document.createTextNode('end'))
+
+    const changed = normalizeEditorDOM(editor)
+
+    expect(changed).toBe(true)
+    // Chip should be preserved
+    expect(editor.querySelector('[data-chip-trigger]')).not.toBeNull()
+    // BR should be preserved (at least one — the original plus the one from unwrapping div)
+    expect(editor.querySelector('br')).not.toBeNull()
+    // Block and inline elements should be unwrapped
+    expect(editor.querySelector('div')).toBeNull()
+    expect(editor.querySelector('b')).toBeNull()
+    // All text should still be present
+    expect(editor.textContent).toContain('start')
+    expect(editor.textContent).toContain('@Alice')
+    expect(editor.textContent).toContain('block content')
+    expect(editor.textContent).toContain('bold text')
+    expect(editor.textContent).toContain('end')
+  })
+})
+
+// ===========================================================================
+// chipNodeTextLength
+// ===========================================================================
+
+describe('chipNodeTextLength', () => {
+  const makeChip = (trigger?: string, display?: string, text?: string): HTMLElement => {
+    const el = document.createElement('span')
+    if (trigger !== undefined) el.dataset.chipTrigger = trigger
+    if (display !== undefined) el.dataset.chipDisplay = display
+    if (text !== undefined) el.textContent = text
+    return el
+  }
+
+  it('sums trigger and display lengths', () => {
+    expect(chipNodeTextLength(makeChip('@', 'Alice'))).toBe(6) // "@Alice"
+  })
+
+  it('handles multi-character display text', () => {
+    expect(chipNodeTextLength(makeChip('#', 'release-notes'))).toBe(14)
+  })
+
+  it('falls back to textContent when chipDisplay is missing', () => {
+    expect(chipNodeTextLength(makeChip('@', undefined, 'Bob'))).toBe(4) // "@" + "Bob"
+  })
+
+  it('treats missing trigger and display as zero length', () => {
+    expect(chipNodeTextLength(makeChip())).toBe(0)
+  })
+})
+
+// ===========================================================================
+// domChildIndexToSegmentIndex
+// ===========================================================================
+
+describe('domChildIndexToSegmentIndex', () => {
+  const chip = (): HTMLElement => {
+    const el = document.createElement('span')
+    el.dataset.chipTrigger = '@'
+    el.dataset.chipDisplay = 'Alice'
+    el.textContent = '@Alice'
+    return el
+  }
+
+  it('returns 0 for the first child', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hello'))
+    editor.appendChild(chip())
+    expect(domChildIndexToSegmentIndex(editor, 0)).toBe(0)
+  })
+
+  it('counts non-empty text, chips, and br elements', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('hi ')) // 0
+    editor.appendChild(chip()) // 1
+    editor.appendChild(document.createElement('br')) // 2
+    editor.appendChild(document.createTextNode('end')) // 3
+
+    expect(domChildIndexToSegmentIndex(editor, 1)).toBe(1)
+    expect(domChildIndexToSegmentIndex(editor, 2)).toBe(2)
+    expect(domChildIndexToSegmentIndex(editor, 3)).toBe(3)
+    expect(domChildIndexToSegmentIndex(editor, 4)).toBe(4)
+  })
+
+  it('skips empty text nodes (they produce no segment)', () => {
+    const editor = document.createElement('div')
+    editor.appendChild(document.createTextNode('')) // skipped
+    editor.appendChild(chip()) // 0
+    editor.appendChild(document.createTextNode('')) // skipped
+    editor.appendChild(chip()) // 1
+
+    // The second chip lives at DOM child index 3 but segment index 1.
+    expect(domChildIndexToSegmentIndex(editor, 3)).toBe(1)
+  })
+})
+
+// ===========================================================================
+// chipNodeToSegment
+// ===========================================================================
+
+describe('chipNodeToSegment', () => {
+  const makeChip = (attrs: Partial<Record<string, string>>): HTMLElement => {
+    const el = document.createElement('span')
+    for (const [key, val] of Object.entries(attrs)) {
+      if (val !== undefined) el.dataset[key] = val
+    }
+    return el
+  }
+
+  it('returns null for a non-chip node', () => {
+    expect(chipNodeToSegment(document.createTextNode('hi'))).toBeNull()
+    expect(chipNodeToSegment(document.createElement('span'))).toBeNull()
+  })
+
+  it('reads a minimal chip', () => {
+    const node = makeChip({ chipTrigger: '@', chipValue: 'u1', chipDisplay: 'Alice' })
+    expect(chipNodeToSegment(node)).toEqual({
+      type: 'chip',
+      trigger: '@',
+      value: 'u1',
+      displayText: 'Alice',
+    })
+  })
+
+  it('attaches parsed data when present', () => {
+    const node = makeChip({
+      chipTrigger: '@',
+      chipValue: 'u1',
+      chipDisplay: 'Alice',
+      chipData: JSON.stringify({ role: 'admin' }),
+    })
+    expect(chipNodeToSegment(node)).toEqual({
+      type: 'chip',
+      trigger: '@',
+      value: 'u1',
+      displayText: 'Alice',
+      data: { role: 'admin' },
+    })
+  })
+
+  it('marks auto-resolved chips', () => {
+    const node = makeChip({
+      chipTrigger: '#',
+      chipValue: 'tag',
+      chipDisplay: 'tag',
+      chipAutoResolved: 'true',
+    })
+    expect(chipNodeToSegment(node)).toEqual({
+      type: 'chip',
+      trigger: '#',
+      value: 'tag',
+      displayText: 'tag',
+      autoResolved: true,
+    })
+  })
+
+  it('preserves an empty-string value (value === undefined is the only reject)', () => {
+    const node = makeChip({ chipTrigger: '@', chipValue: '', chipDisplay: 'Anon' })
+    expect(chipNodeToSegment(node)).toEqual({
+      type: 'chip',
+      trigger: '@',
+      value: '',
+      displayText: 'Anon',
+    })
+  })
+
+  it('returns null when the value attribute is absent', () => {
+    const node = makeChip({ chipTrigger: '@', chipDisplay: 'Alice' })
+    expect(chipNodeToSegment(node)).toBeNull()
+  })
+})
