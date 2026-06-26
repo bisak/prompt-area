@@ -1,8 +1,8 @@
-export { P as PromptArea, b as PromptAreaBind, c as PromptAreaState, U as UsePromptAreaStateOptions, u as usePromptArea, a as usePromptAreaState } from './use-prompt-area-state-8cce879a.js';
-export { A as ActiveTrigger, C as ChipSegment, c as ChipStyle, g as PromptAreaFile, i as PromptAreaHandle, P as PromptAreaImage, h as PromptAreaProps, S as Segment, T as TextSegment, f as TriggerActivateContext, e as TriggerConfig, b as TriggerMode, a as TriggerPosition, d as TriggerSuggestion } from './types-aba252ab.js';
-export { u as CallbackTriggerOptions, C as CommandTriggerOptions, H as HashtagTriggerOptions, M as MarkdownToken, q as MentionTriggerOptions, o as callbackTrigger, c as chip, l as commandTrigger, d as detectActiveTrigger, g as getChips, a as getChipsByTrigger, h as hasChips, n as hashtagTrigger, i as isSegmentsEmpty, b as isValidTriggerPosition, k as mentionTrigger, m as mergeAdjacentTextSegments, f as parseInlineMarkdown, p as plainTextToSegments, r as resolveChip, e as resolveTriggersInSegments, j as segmentsEqual, s as segmentsToPlainText, t as text } from './trigger-presets-4ccd4dbc.js';
-export { A as ActionBar, a as ActionBarProps } from './action-bar-3e4cad29.js';
-export { S as StatusBar, a as StatusBarProps } from './status-bar-3d8e8c22.js';
-export { C as CompactPromptArea, a as CompactPromptAreaProps } from './compact-prompt-area-8f5836c9.js';
-export { C as ChatPromptLayout, a as ChatPromptLayoutProps } from './chat-prompt-layout-5c5110ce.js';
+export { PromptArea, PromptAreaBind, PromptAreaState, UsePromptAreaStateOptions, usePromptArea, usePromptAreaState } from './prompt-area/index.js';
+export { A as ActiveTrigger, C as ChipSegment, a as ChipStyle, P as PromptAreaFile, b as PromptAreaHandle, c as PromptAreaImage, d as PromptAreaProps, S as Segment, T as TextSegment, e as TriggerActivateContext, f as TriggerConfig, g as TriggerMode, h as TriggerPosition, i as TriggerSuggestion } from './types-DauyYYAQ.js';
+export { CallbackTriggerOptions, CommandTriggerOptions, HashtagTriggerOptions, MarkdownToken, MentionTriggerOptions, callbackTrigger, chip, commandTrigger, detectActiveTrigger, getChips, getChipsByTrigger, hasChips, hashtagTrigger, isSegmentsEmpty, isValidTriggerPosition, mentionTrigger, mergeAdjacentTextSegments, parseInlineMarkdown, plainTextToSegments, resolveChip, resolveTriggersInSegments, segmentsEqual, segmentsToPlainText, text } from './helpers/index.js';
+export { ActionBar, ActionBarProps } from './action-bar/index.js';
+export { StatusBar, StatusBarProps } from './status-bar/index.js';
+export { CompactPromptArea, CompactPromptAreaProps } from './compact-prompt-area/index.js';
+export { ChatPromptLayout, ChatPromptLayoutProps } from './chat-prompt-layout/index.js';
 import 'react';
