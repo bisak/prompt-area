@@ -200,6 +200,13 @@ type PromptAreaProps = {
     disabled?: boolean;
     /** Whether to render simple inline markdown (bold, italic, URLs, lists) */
     markdown?: boolean;
+    /**
+     * When markdown is on, the editor rewrites typed list markers (`- ` / `* `)
+     * to a `•` bullet glyph in the model. Set to `false` to keep the original
+     * marker in the value/`onChange` text — needed when a host renders the output
+     * as real markdown, where `•` is not a valid list marker. Default `true`.
+     */
+    normalizeBullets?: boolean;
     /** Called when Enter is pressed (without Shift) */
     onSubmit?: (segments: Segment[]) => void;
     /** Called when Escape is pressed */
@@ -225,6 +232,13 @@ type PromptAreaProps = {
     minHeight?: number;
     /** Maximum height in pixels */
     maxHeight?: number;
+    /**
+     * Maximum number of plain-text characters allowed. Typed input past the cap
+     * is truncated back to this length (like a native `<textarea maxLength>`).
+     * Chips count as their `trigger + displayText` length. To cap pasted text,
+     * handle it via `onRawPaste`.
+     */
+    maxLength?: number;
     /** Auto-focus on mount */
     autoFocus?: boolean;
     /** When true, the area auto-grows to fit content on focus and shrinks on blur */
@@ -251,6 +265,34 @@ type PromptAreaProps = {
     onFileRemove?: (file: PromptAreaFile) => void;
     /** Called when the user clicks a file attachment */
     onFileClick?: (file: PromptAreaFile) => void;
+    /**
+     * Called on keydown before PromptArea's own handling. Call `preventDefault()`
+     * to suppress the built-in behaviour (submit, trigger navigation, etc.) for
+     * that key and take over entirely.
+     */
+    onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+    /**
+     * Called on blur with the native FocusEvent, so consumers can inspect
+     * `relatedTarget` (e.g. to retain focus when a composer toolbar is clicked).
+     */
+    onBlur?: (e: React.FocusEvent<HTMLDivElement>) => void;
+    /**
+     * Called at the start of a paste, before PromptArea reads the clipboard. Call
+     * `preventDefault()` to take over the paste completely — e.g. to divert large
+     * text or non-image files to an upload pipeline. The built-in segment/image
+     * paste handling is skipped when the event's default is prevented.
+     */
+    onRawPaste?: (e: React.ClipboardEvent<HTMLDivElement>) => void;
+    /**
+     * Whether pressing Enter (without Shift) submits. Defaults to true. Set false
+     * to make Enter insert a newline instead (e.g. on touch devices where submit
+     * is a dedicated button).
+     */
+    submitOnEnter?: boolean;
+    /** Forwarded to the editable element. */
+    spellCheck?: boolean;
+    /** Forwarded to the editable element as `aria-describedby`. */
+    'aria-describedby'?: string;
 };
 /**
  * Ref handle exposed by PromptArea via useImperativeHandle.
@@ -266,6 +308,23 @@ type PromptAreaHandle = {
     getPlainText: () => string;
     /** Clear all content */
     clear: () => void;
+    /** Replace all content with plain text (chips dropped), caret moved to the end. */
+    setText: (text: string) => void;
+    /** Append plain text at the end (existing chips preserved), caret moved to the end. */
+    appendText: (text: string) => void;
+    /** Caret offset in plain-text characters, or null when unavailable. */
+    getCursorPosition: () => number | null;
+    /** Move the caret to a plain-text offset. */
+    setCursorPosition: (offset: number) => void;
+    /** Move the caret to the end of the content. */
+    setCursorToEnd: () => void;
+    /** Current selection as plain-text offsets, or null when there is none. */
+    getSelection: () => {
+        start: number;
+        end: number;
+    } | null;
+    /** Set the selection between two plain-text offsets. */
+    setSelection: (start: number, end: number) => void;
 };
 
-export type { ActiveTrigger as A, ChipSegment as C, PromptAreaImage as P, Segment as S, TextSegment as T, TriggerPosition as a, TriggerMode as b, ChipStyle as c, TriggerSuggestion as d, TriggerConfig as e, TriggerActivateContext as f, PromptAreaFile as g, PromptAreaProps as h, PromptAreaHandle as i };
+export type { ActiveTrigger as A, ChipSegment as C, PromptAreaFile as P, Segment as S, TextSegment as T, ChipStyle as a, PromptAreaHandle as b, PromptAreaImage as c, PromptAreaProps as d, TriggerActivateContext as e, TriggerConfig as f, TriggerMode as g, TriggerPosition as h, TriggerSuggestion as i };

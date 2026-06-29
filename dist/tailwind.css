@@ -1,0 +1,191 @@
+/**
+ * Prompt Area — Tailwind v4 preset.
+ *
+ * For consumers who run Tailwind themselves and want token-level theming.
+ * If you are not using Tailwind, import 'prompt-area/styles.css' instead.
+ *
+ *   @import 'prompt-area/tailwind.css';
+ *
+ * The component styles use a few tw-animate-css utilities; if you want the
+ * entrance/spinner animations, also: @import 'tw-animate-css';
+ */
+@custom-variant dark (&:is(.dark *));
+
+/* Generate the utilities the components use from the built output. */
+@source './**/*.js';
+
+/**
+ * Tailwind theme mappings for Prompt Area.
+ *
+ * Maps the design-token CSS variables (defined in tokens.css) to Tailwind
+ * v4 theme variables so utilities like `bg-secondary` / `text-foreground` /
+ * `rounded-lg` resolve correctly. Shipped both inside the prebuilt
+ * `styles.css` and as part of the optional `tailwind.css` preset.
+ *
+ * Names intentionally match the shadcn/ui convention so the component
+ * automatically inherits the theme of an existing shadcn project.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/**
+ * Default design tokens for Prompt Area (neutral base, light + dark).
+ *
+ * These are sensible standalone defaults so the component looks right with
+ * zero configuration. To theme it, override any of these variables in your
+ * own CSS (e.g. on `:root` / `.dark`, or scoped to a wrapper element). In a
+ * shadcn project these names already exist, so the component inherits your
+ * theme automatically.
+ */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 20%);
+  --ring: oklch(0.556 0 0);
+}
+
+/**
+ * Prompt Area component styles.
+ *
+ * These are the hand-authored styles the components depend on (chips, the
+ * tap ripple, markdown markers, and stable selectors for the bars). They
+ * live in the `components` layer so consumer utilities win over them.
+ */
+@layer components {
+  .prompt-area-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    vertical-align: baseline;
+    margin: 0 1px;
+    background-color: var(--secondary);
+    color: var(--foreground);
+    transition: background-color 0.2s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .prompt-area-chip:hover {
+    background-color: color-mix(in srgb, var(--secondary) 80%, var(--foreground) 20%);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+
+  .prompt-area-chip:active {
+    transform: scale(0.93);
+    background-color: color-mix(in srgb, var(--secondary) 70%, var(--foreground) 30%);
+    box-shadow: 0 0 0 transparent;
+    transition: background-color 0.05s ease, transform 0.08s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.05s ease;
+  }
+
+  @keyframes prompt-area-chip-ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  .prompt-area-chip-ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 100%;
+    aspect-ratio: 1;
+    background: color-mix(in srgb, var(--foreground) 15%, transparent);
+    pointer-events: none;
+    animation: prompt-area-chip-ripple 0.45s ease-out forwards;
+  }
+  .prompt-area-md-marker {
+    font-size: 0;
+    display: inline;
+  }
+  .prompt-area-chip--inline {
+    padding: 0;
+    border-radius: 0;
+    margin: 0;
+    font-weight: 700;
+  }
+  .action-bar {
+    /* Base styles for action-bar; Tailwind utilities handle the layout.
+       This class exists as a stable selector for consumer overrides. */
+  }
+  .status-bar {
+    /* Base styles for status-bar; Tailwind utilities handle the layout.
+       This class exists as a stable selector for consumer overrides. */
+  }
+
+  /* Honour reduced-motion for the auto-grow editor. Its height / min-height
+     transition is applied via inline styles (e.g. the compact prompt area's
+     collapse/expand), so it sits outside Tailwind's `motion-reduce` variant
+     and needs an explicit override here. */
+  @media (prefers-reduced-motion: reduce) {
+    .prompt-area-editor {
+      transition: none !important;
+    }
+  }
+}

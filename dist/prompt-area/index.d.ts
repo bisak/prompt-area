@@ -1,6 +1,6 @@
 import * as react from 'react';
-import { d as PromptAreaProps, b as PromptAreaHandle, S as Segment, f as TriggerConfig, C as ChipSegment, A as ActiveTrigger, i as TriggerSuggestion } from '../types-DauyYYAQ.js';
-export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, T as TextSegment, e as TriggerActivateContext, g as TriggerMode, h as TriggerPosition } from '../types-DauyYYAQ.js';
+import { d as PromptAreaProps, b as PromptAreaHandle, S as Segment, f as TriggerConfig, C as ChipSegment, A as ActiveTrigger, i as TriggerSuggestion } from '../types-Io1mJiB-.js';
+export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, T as TextSegment, e as TriggerActivateContext, g as TriggerMode, h as TriggerPosition } from '../types-Io1mJiB-.js';
 export { CallbackTriggerOptions, CommandTriggerOptions, HashtagTriggerOptions, MarkdownToken, MentionTriggerOptions, callbackTrigger, chip, commandTrigger, detectActiveTrigger, getChips, getChipsByTrigger, hasChips, hashtagTrigger, isSegmentsEmpty, isValidTriggerPosition, mentionTrigger, mergeAdjacentTextSegments, parseInlineMarkdown, plainTextToSegments, resolveChip, resolveTriggersInSegments, segmentsEqual, segmentsToPlainText, text } from '../helpers/index.js';
 
 /**
@@ -28,7 +28,7 @@ export { CallbackTriggerOptions, CommandTriggerOptions, HashtagTriggerOptions, M
  * />
  * ```
  */
-declare function PromptArea({ value, onChange, triggers, placeholder, className, disabled, markdown, onSubmit, onEscape, onChipClick, onChipAdd, onChipDelete, onLinkClick, onPaste, onUndo, onRedo, minHeight, maxHeight, autoFocus, autoGrow, 'aria-label': ariaLabel, 'data-test-id': dataTestId, images, imagePosition, onImagePaste, onImageRemove, onImageClick, files, filePosition, onFileRemove, onFileClick, onKeyDown, onBlur, onRawPaste, submitOnEnter, spellCheck, maxLength, 'aria-describedby': ariaDescribedBy, ref, }: PromptAreaProps & {
+declare function PromptArea({ value, onChange, triggers, placeholder, className, disabled, markdown, normalizeBullets, onSubmit, onEscape, onChipClick, onChipAdd, onChipDelete, onLinkClick, onPaste, onUndo, onRedo, minHeight, maxHeight, autoFocus, autoGrow, 'aria-label': ariaLabel, 'data-test-id': dataTestId, images, imagePosition, onImagePaste, onImageRemove, onImageClick, files, filePosition, onFileRemove, onFileClick, onKeyDown, onBlur, onRawPaste, submitOnEnter, spellCheck, maxLength, 'aria-describedby': ariaDescribedBy, ref, }: PromptAreaProps & {
     ref?: React.Ref<PromptAreaHandle>;
 }): react.JSX.Element;
 
@@ -51,6 +51,7 @@ type UsePromptAreaOptions = {
     onRedo?: (segments: Segment[]) => void;
     onImagePaste?: (file: File) => void;
     markdown?: boolean;
+    normalizeBullets?: boolean;
     submitOnEnter?: boolean;
     maxLength?: number;
 };
@@ -79,7 +80,7 @@ type UsePromptAreaReturn = {
         onBlur: () => void;
     };
 };
-declare function usePromptArea({ value, onChange, triggers, onSubmit, onEscape, onChipClick, onChipAdd, onChipDelete, onLinkClick, onPaste, onRawPaste, onUndo, onRedo, onImagePaste, markdown: markdownEnabled, submitOnEnter, maxLength, }: UsePromptAreaOptions): UsePromptAreaReturn;
+declare function usePromptArea({ value, onChange, triggers, onSubmit, onEscape, onChipClick, onChipAdd, onChipDelete, onLinkClick, onPaste, onRawPaste, onUndo, onRedo, onImagePaste, markdown: markdownEnabled, normalizeBullets, submitOnEnter, maxLength, }: UsePromptAreaOptions): UsePromptAreaReturn;
 
 /**
  * Convenience hook that wires up all the boilerplate state for a PromptArea.

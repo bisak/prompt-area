@@ -1,2 +1,0 @@
-'use client';
-import {a}from'./chunk-23Y7B365.js';import {jsxs,jsx}from'react/jsx-runtime';function c({left:e,right:t,className:o,disabled:a$1=!1,"aria-label":n,"data-test-id":s,ref:p}){return jsxs("div",{ref:p,role:"toolbar","aria-label":n??"Action bar","aria-disabled":a$1||void 0,"data-test-id":s,className:a("action-bar","flex items-center justify-between gap-2 pt-2",a$1&&"pointer-events-none opacity-50",o),children:[e&&jsx("div",{className:"flex items-center gap-1",children:e}),t&&jsx("div",{className:"ml-auto flex items-center gap-1",children:t})]})}export{c as a};
