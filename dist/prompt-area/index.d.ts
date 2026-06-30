@@ -1,6 +1,6 @@
 import * as react from 'react';
-import { d as PromptAreaProps, b as PromptAreaHandle, S as Segment, f as TriggerConfig, C as ChipSegment, A as ActiveTrigger, i as TriggerSuggestion } from '../types-Io1mJiB-.js';
-export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, T as TextSegment, e as TriggerActivateContext, g as TriggerMode, h as TriggerPosition } from '../types-Io1mJiB-.js';
+import { d as PromptAreaProps, b as PromptAreaHandle, S as Segment, f as TriggerConfig, C as ChipSegment, A as ActiveTrigger, i as TriggerSuggestion } from '../types-BaqT4LR9.js';
+export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, T as TextSegment, e as TriggerActivateContext, g as TriggerMode, h as TriggerPosition } from '../types-BaqT4LR9.js';
 export { CallbackTriggerOptions, CommandTriggerOptions, HashtagTriggerOptions, MarkdownToken, MentionTriggerOptions, callbackTrigger, chip, commandTrigger, detectActiveTrigger, getChips, getChipsByTrigger, hasChips, hashtagTrigger, isSegmentsEmpty, isValidTriggerPosition, mentionTrigger, mergeAdjacentTextSegments, parseInlineMarkdown, plainTextToSegments, resolveChip, resolveTriggersInSegments, segmentsEqual, segmentsToPlainText, text } from '../helpers/index.js';
 
 /**

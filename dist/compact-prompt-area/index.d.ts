@@ -1,5 +1,5 @@
 import * as react from 'react';
-import { S as Segment, f as TriggerConfig, C as ChipSegment, c as PromptAreaImage, P as PromptAreaFile, b as PromptAreaHandle } from '../types-Io1mJiB-.js';
+import { S as Segment, f as TriggerConfig, C as ChipSegment, c as PromptAreaImage, P as PromptAreaFile, b as PromptAreaHandle } from '../types-BaqT4LR9.js';
 
 type CompactPromptAreaProps = {
     /** The document segments (controlled) */
