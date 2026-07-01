@@ -1,2 +1,2 @@
 'use client';
-export{a as CompactPromptArea}from'../chunk-7MMFJ4UP.js';import'../chunk-L74ZVPMQ.js';import'../chunk-23Y7B365.js';import'../chunk-JD6I5DFP.js';
+export{a as CompactPromptArea}from'../chunk-L4CDMX5T.js';import'../chunk-ZOC6DT7K.js';import'../chunk-23Y7B365.js';import'../chunk-NXA7D75N.js';

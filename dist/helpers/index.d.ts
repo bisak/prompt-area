@@ -1,5 +1,5 @@
-import { f as TriggerConfig, A as ActiveTrigger, h as TriggerPosition, S as Segment, C as ChipSegment, T as TextSegment } from '../types-BaqT4LR9.js';
-export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, e as TriggerActivateContext, g as TriggerMode, i as TriggerSuggestion } from '../types-BaqT4LR9.js';
+import { f as TriggerConfig, A as ActiveTrigger, h as TriggerPosition, S as Segment, C as ChipSegment, T as TextSegment } from '../types-BFUUkyja.js';
+export { a as ChipStyle, P as PromptAreaFile, c as PromptAreaImage, e as TriggerActivateContext, g as TriggerMode, i as TriggerSuggestion } from '../types-BFUUkyja.js';
 
 /**
  * Pure logic engine for the PromptArea component.
